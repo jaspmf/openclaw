@@ -514,8 +514,9 @@ export function createAgentEventHandler({
       }
       if (subscribers && subscribers.size > 0) {
         broadcastToConnIds(event, payload, subscribers, opts);
-        return;
       }
+      // Fall through to global broadcast for clients (e.g. TUI) that consume
+      // chat events without per-session subscriptions.
     }
     broadcast(event, payload, opts);
   };
