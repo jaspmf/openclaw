@@ -465,6 +465,9 @@ export function createAgentEventHandler({
   sessionEventSubscribers,
   sessionMessageSubscribers,
 }: AgentEventHandlerOptions) {
+  // Cache canonical keys per session key to avoid sync filesystem lookups in the hot path.
+  const canonicalKeyCache = new Map<string, string>();
+
   /**
    * Broadcast a chat event to connections subscribed to the given session.
    * Falls back to global broadcast when no session-specific subscribers exist,
@@ -482,7 +485,11 @@ export function createAgentEventHandler({
       // fallback keys from resolveSessionKeyForRun that may not match subscriber store keys.
       let subscribers = sessionMessageSubscribers.get(sessionKey);
       if (!subscribers || subscribers.size === 0) {
-        const { canonicalKey } = loadSessionEntry(sessionKey);
+        let canonicalKey = canonicalKeyCache.get(sessionKey);
+        if (canonicalKey === undefined) {
+          canonicalKey = loadSessionEntry(sessionKey).canonicalKey;
+          canonicalKeyCache.set(sessionKey, canonicalKey);
+        }
         if (canonicalKey !== sessionKey) {
           subscribers = sessionMessageSubscribers.get(canonicalKey);
         }
