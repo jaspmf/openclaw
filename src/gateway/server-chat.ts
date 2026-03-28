@@ -491,7 +491,9 @@ export function createAgentEventHandler({
         if (canonicalKey === undefined) {
           if (canonicalKeyCache.size >= CANONICAL_KEY_CACHE_LIMIT) {
             const oldest = canonicalKeyCache.keys().next().value;
-            if (oldest !== undefined) canonicalKeyCache.delete(oldest);
+            if (oldest !== undefined) {
+              canonicalKeyCache.delete(oldest);
+            }
           }
           canonicalKey = loadSessionEntry(sessionKey).canonicalKey;
           canonicalKeyCache.set(sessionKey, canonicalKey);
