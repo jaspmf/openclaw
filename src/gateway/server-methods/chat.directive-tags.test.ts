@@ -235,6 +235,8 @@ function extractFirstTextBlock(payload: unknown): string | undefined {
 function createChatContext(): Pick<
   GatewayRequestContext,
   | "broadcast"
+  | "broadcastToConnIds"
+  | "sessionMessageSubscribers"
   | "nodeSendToSession"
   | "agentRunSeq"
   | "chatAbortControllers"
@@ -248,6 +250,7 @@ function createChatContext(): Pick<
 > {
   return {
     broadcast: vi.fn() as unknown as GatewayRequestContext["broadcast"],
+    broadcastToConnIds: vi.fn() as unknown as GatewayRequestContext["broadcastToConnIds"],
     nodeSendToSession: vi.fn() as unknown as GatewayRequestContext["nodeSendToSession"],
     agentRunSeq: new Map<string, number>(),
     chatAbortControllers: new Map(),
@@ -257,6 +260,9 @@ function createChatContext(): Pick<
     removeChatRun: vi.fn(),
     dedupe: new Map(),
     registerToolEventRecipient: vi.fn(),
+    sessionMessageSubscribers: {
+      get: () => new Set<string>(),
+    } as unknown as GatewayRequestContext["sessionMessageSubscribers"],
     logGateway: {
       warn: vi.fn(),
       debug: vi.fn(),

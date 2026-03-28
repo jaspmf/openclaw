@@ -50,6 +50,8 @@ export function createChatAbortContext(
       .mockImplementation((run: string) => ({ sessionKey: "main", clientRunId: run })),
     agentRunSeq: new Map<string, number>(),
     broadcast: vi.fn(),
+    broadcastToConnIds: vi.fn(),
+    sessionMessageSubscribers: { get: () => new Set<string>() },
     nodeSendToSession: vi.fn(),
     logGateway: { warn: vi.fn() },
     ...overrides,
