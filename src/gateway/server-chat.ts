@@ -477,9 +477,17 @@ export function createAgentEventHandler({
     opts?: { dropIfSlow?: boolean },
   ) => {
     if (sessionKey) {
-      const { canonicalKey } = loadSessionEntry(sessionKey);
-      const subscribers = sessionMessageSubscribers.get(canonicalKey);
-      if (subscribers.size > 0) {
+      // Try the key as-is first (chatLink and eventSessionKey are typically canonical).
+      // If no subscribers found, try canonicalizing via loadSessionEntry to handle
+      // fallback keys from resolveSessionKeyForRun that may not match subscriber store keys.
+      let subscribers = sessionMessageSubscribers.get(sessionKey);
+      if (!subscribers || subscribers.size === 0) {
+        const { canonicalKey } = loadSessionEntry(sessionKey);
+        if (canonicalKey !== sessionKey) {
+          subscribers = sessionMessageSubscribers.get(canonicalKey);
+        }
+      }
+      if (subscribers && subscribers.size > 0) {
         broadcastToConnIds(event, payload, subscribers, opts);
         return;
       }
