@@ -466,6 +466,8 @@ export function createAgentEventHandler({
   sessionMessageSubscribers,
 }: AgentEventHandlerOptions) {
   // Cache canonical keys per session key to avoid sync filesystem lookups in the hot path.
+  // Bounded to prevent unbounded growth in long-lived gateways.
+  const CANONICAL_KEY_CACHE_LIMIT = 256;
   const canonicalKeyCache = new Map<string, string>();
 
   /**
@@ -487,6 +489,10 @@ export function createAgentEventHandler({
       if (!subscribers || subscribers.size === 0) {
         let canonicalKey = canonicalKeyCache.get(sessionKey);
         if (canonicalKey === undefined) {
+          if (canonicalKeyCache.size >= CANONICAL_KEY_CACHE_LIMIT) {
+            const oldest = canonicalKeyCache.keys().next().value;
+            if (oldest !== undefined) canonicalKeyCache.delete(oldest);
+          }
           canonicalKey = loadSessionEntry(sessionKey).canonicalKey;
           canonicalKeyCache.set(sessionKey, canonicalKey);
         }
