@@ -930,6 +930,7 @@ export async function startGatewayServer(
             clearAgentRunContext,
             toolEventRecipients,
             sessionEventSubscribers,
+            sessionMessageSubscribers,
           }),
         );
 
@@ -1267,6 +1268,7 @@ export async function startGatewayServer(
         sessionMessageSubscribers.unsubscribeAll(connId);
       },
       getSessionEventSubscriberConnIds: sessionEventSubscribers.getAll,
+      getSessionMessageSubscribers: sessionMessageSubscribers.get,
       registerToolEventRecipient: toolEventRecipients.add,
       dedupe,
       wizardSessions,
