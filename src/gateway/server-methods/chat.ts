@@ -1130,6 +1130,7 @@ function chatBroadcast(
     | "broadcast"
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
+    | "getSessionEventSubscriberConnIds"
     | "nodeSendToSession"
     | "agentRunSeq"
   >,
@@ -1138,8 +1139,13 @@ function chatBroadcast(
   opts?: { dropIfSlow?: boolean },
 ) {
   const subscribers = context.getSessionMessageSubscribers(payload.sessionKey);
-  if (subscribers.size > 0) {
-    context.broadcastToConnIds(event, payload, subscribers, opts);
+  const operators = context.getSessionEventSubscriberConnIds();
+  if (subscribers.size > 0 || operators.size > 0) {
+    const targets = new Set(subscribers);
+    for (const id of operators) {
+      targets.add(id);
+    }
+    context.broadcastToConnIds(event, payload, targets, opts);
   } else {
     context.broadcast(event, payload, opts);
   }
@@ -1152,6 +1158,7 @@ function broadcastChatFinal(params: {
     | "broadcast"
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
+    | "getSessionEventSubscriberConnIds"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;
@@ -1192,6 +1199,7 @@ function broadcastSideResult(params: {
     | "broadcast"
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
+    | "getSessionEventSubscriberConnIds"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;
@@ -1210,6 +1218,7 @@ function broadcastChatError(params: {
     | "broadcast"
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
+    | "getSessionEventSubscriberConnIds"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;

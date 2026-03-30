@@ -478,8 +478,14 @@ export function createAgentEventHandler({
   ) => {
     if (sessionKey) {
       const subscribers = sessionMessageSubscribers.get(sessionKey);
-      if (subscribers.size > 0) {
-        broadcastToConnIds(event, payload, subscribers, opts);
+      // Also include operator-level UIs subscribed to all session events
+      const operators = sessionEventSubscribers.getAll();
+      if (subscribers.size > 0 || operators.size > 0) {
+        const targets = new Set(subscribers);
+        for (const id of operators) {
+          targets.add(id);
+        }
+        broadcastToConnIds(event, payload, targets, opts);
         return;
       }
     }
