@@ -1986,13 +1986,7 @@ export const chatHandlers: GatewayRequestHandlers = {
         stripEnvelopeFromMessage(appended.message) as Record<string, unknown>,
       ),
     };
-    const subscribers = context.getSessionMessageSubscribers(sessionKey);
-    if (subscribers.size > 0) {
-      context.broadcastToConnIds("chat", chatPayload, subscribers);
-    } else {
-      context.broadcast("chat", chatPayload);
-    }
-    context.nodeSendToSession(sessionKey, "chat", chatPayload);
+    chatBroadcast(context, "chat", chatPayload);
 
     respond(true, { ok: true, messageId: appended.messageId });
   },
