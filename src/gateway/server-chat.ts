@@ -207,6 +207,8 @@ export type ChatRunState = {
   /** Length of text at the time of the last broadcast, used to avoid duplicate flushes. */
   deltaLastBroadcastLen: Map<string, number>;
   abortedRuns: Map<string, number>;
+  /** Maps clientRunId → sender connection ID, so broadcasts always include the originator. */
+  senderConnIds: Map<string, string>;
   clear: () => void;
 };
 
@@ -217,12 +219,15 @@ export function createChatRunState(): ChatRunState {
   const deltaLastBroadcastLen = new Map<string, number>();
   const abortedRuns = new Map<string, number>();
 
+  const senderConnIds = new Map<string, string>();
+
   const clear = () => {
     registry.clear();
     buffers.clear();
     deltaSentAt.clear();
     deltaLastBroadcastLen.clear();
     abortedRuns.clear();
+    senderConnIds.clear();
   };
 
   return {
@@ -231,6 +236,7 @@ export function createChatRunState(): ChatRunState {
     deltaSentAt,
     deltaLastBroadcastLen,
     abortedRuns,
+    senderConnIds,
     clear,
   };
 }
@@ -474,6 +480,7 @@ export function createAgentEventHandler({
     event: string,
     payload: unknown,
     sessionKey: string | undefined,
+    runId: string | undefined,
     opts?: { dropIfSlow?: boolean },
   ) => {
     if (sessionKey) {
@@ -484,6 +491,15 @@ export function createAgentEventHandler({
         const targets = new Set(subscribers);
         for (const id of operators) {
           targets.add(id);
+        }
+        // Always include the sender connection so clients that never
+        // call subscribe (e.g. iOS chat/talk transports) still receive
+        // responses to their own requests.
+        if (runId) {
+          const senderConnId = chatRunState.senderConnIds.get(runId);
+          if (senderConnId) {
+            targets.add(senderConnId);
+          }
         }
         broadcastToConnIds(event, payload, targets, opts);
         return;
@@ -609,7 +625,7 @@ export function createAgentEventHandler({
         timestamp: now,
       },
     };
-    broadcastChatToSession("chat", payload, sessionKey, { dropIfSlow: true });
+    broadcastChatToSession("chat", payload, sessionKey, clientRunId, { dropIfSlow: true });
     nodeSendToSession(sessionKey, "chat", payload);
   };
 
@@ -666,7 +682,7 @@ export function createAgentEventHandler({
         timestamp: now,
       },
     };
-    broadcastChatToSession("chat", flushPayload, sessionKey, { dropIfSlow: true });
+    broadcastChatToSession("chat", flushPayload, sessionKey, clientRunId, { dropIfSlow: true });
     nodeSendToSession(sessionKey, "chat", flushPayload);
     chatRunState.deltaLastBroadcastLen.set(clientRunId, text.length);
     chatRunState.deltaSentAt.set(clientRunId, now);
@@ -690,6 +706,7 @@ export function createAgentEventHandler({
     chatRunState.deltaLastBroadcastLen.delete(clientRunId);
     chatRunState.buffers.delete(clientRunId);
     chatRunState.deltaSentAt.delete(clientRunId);
+    chatRunState.senderConnIds.delete(clientRunId);
     if (jobState === "done") {
       const payload = {
         runId: clientRunId,
@@ -706,7 +723,7 @@ export function createAgentEventHandler({
               }
             : undefined,
       };
-      broadcastChatToSession("chat", payload, sessionKey);
+      broadcastChatToSession("chat", payload, sessionKey, clientRunId);
       nodeSendToSession(sessionKey, "chat", payload);
       return;
     }
@@ -717,7 +734,7 @@ export function createAgentEventHandler({
       state: "error" as const,
       errorMessage: error ? formatForLog(error) : undefined,
     };
-    broadcastChatToSession("chat", payload, sessionKey);
+    broadcastChatToSession("chat", payload, sessionKey, clientRunId);
     nodeSendToSession(sessionKey, "chat", payload);
   };
 
@@ -874,6 +891,7 @@ export function createAgentEventHandler({
         chatRunState.abortedRuns.delete(evt.runId);
         chatRunState.buffers.delete(clientRunId);
         chatRunState.deltaSentAt.delete(clientRunId);
+        chatRunState.senderConnIds.delete(clientRunId);
         if (chatLink) {
           chatRunState.registry.remove(evt.runId, clientRunId, sessionKey);
         }

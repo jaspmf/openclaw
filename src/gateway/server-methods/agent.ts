@@ -620,6 +620,12 @@ export const agentHandlers: GatewayRequestHandlers = {
           sessionKey: canonicalSessionKey,
           clientRunId: idem,
         });
+        // Track the sender connection so broadcasts always include it,
+        // even for clients that never call sessions.subscribe (e.g. iOS).
+        const senderConnId = typeof client?.connId === "string" ? client.connId : undefined;
+        if (senderConnId) {
+          context.setChatSenderConnId(idem, senderConnId);
+        }
         if (requestedBestEffortDeliver === undefined) {
           bestEffortDeliver = true;
         }

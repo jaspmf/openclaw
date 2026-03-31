@@ -1131,11 +1131,12 @@ function chatBroadcast(
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
     | "getSessionEventSubscriberConnIds"
+    | "getChatSenderConnId"
     | "nodeSendToSession"
     | "agentRunSeq"
   >,
   event: string,
-  payload: Record<string, unknown> & { sessionKey: string },
+  payload: Record<string, unknown> & { sessionKey: string; runId?: string },
   opts?: { dropIfSlow?: boolean },
 ) {
   const subscribers = context.getSessionMessageSubscribers(payload.sessionKey);
@@ -1144,6 +1145,15 @@ function chatBroadcast(
     const targets = new Set(subscribers);
     for (const id of operators) {
       targets.add(id);
+    }
+    // Always include the sender connection so clients that never
+    // call subscribe (e.g. iOS chat/talk transports) still receive
+    // responses to their own requests.
+    if (payload.runId) {
+      const senderConnId = context.getChatSenderConnId(payload.runId);
+      if (senderConnId) {
+        targets.add(senderConnId);
+      }
     }
     context.broadcastToConnIds(event, payload, targets, opts);
   } else {
@@ -1159,6 +1169,7 @@ function broadcastChatFinal(params: {
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
     | "getSessionEventSubscriberConnIds"
+    | "getChatSenderConnId"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;
@@ -1200,6 +1211,7 @@ function broadcastSideResult(params: {
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
     | "getSessionEventSubscriberConnIds"
+    | "getChatSenderConnId"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;
@@ -1219,6 +1231,7 @@ function broadcastChatError(params: {
     | "broadcastToConnIds"
     | "getSessionMessageSubscribers"
     | "getSessionEventSubscriberConnIds"
+    | "getChatSenderConnId"
     | "nodeSendToSession"
     | "agentRunSeq"
   >;

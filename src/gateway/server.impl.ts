@@ -1258,6 +1258,9 @@ export async function startGatewayServer(
       chatDeltaSentAt: chatRunState.deltaSentAt,
       chatDeltaLastBroadcastLen: chatRunState.deltaLastBroadcastLen,
       addChatRun,
+      setChatSenderConnId: (runId: string, connId: string) => {
+        chatRunState.senderConnIds.set(runId, connId);
+      },
       removeChatRun,
       subscribeSessionEvents: sessionEventSubscribers.subscribe,
       unsubscribeSessionEvents: sessionEventSubscribers.unsubscribe,
@@ -1269,6 +1272,7 @@ export async function startGatewayServer(
       },
       getSessionEventSubscriberConnIds: sessionEventSubscribers.getAll,
       getSessionMessageSubscribers: sessionMessageSubscribers.get,
+      getChatSenderConnId: (runId: string) => chatRunState.senderConnIds.get(runId),
       registerToolEventRecipient: toolEventRecipients.add,
       dedupe,
       wizardSessions,
