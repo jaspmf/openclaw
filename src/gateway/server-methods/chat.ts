@@ -1798,6 +1798,11 @@ export const chatHandlers: GatewayRequestHandlers = {
                 }
               }
             }
+            // Track the sender connection so broadcasts always include it,
+            // even for clients that never call sessions.subscribe (e.g. iOS).
+            if (connId) {
+              context.setChatSenderConnId(runId, connId);
+            }
           },
           onModelSelected,
         },

@@ -706,7 +706,8 @@ export function createAgentEventHandler({
     chatRunState.deltaLastBroadcastLen.delete(clientRunId);
     chatRunState.buffers.delete(clientRunId);
     chatRunState.deltaSentAt.delete(clientRunId);
-    chatRunState.senderConnIds.delete(clientRunId);
+    // Note: senderConnIds deleted after final broadcast below, not here,
+    // so the sender connection is still available for final/error events.
     if (jobState === "done") {
       const payload = {
         runId: clientRunId,
@@ -725,6 +726,7 @@ export function createAgentEventHandler({
       };
       broadcastChatToSession("chat", payload, sessionKey, clientRunId);
       nodeSendToSession(sessionKey, "chat", payload);
+      chatRunState.senderConnIds.delete(clientRunId);
       return;
     }
     const payload = {
@@ -736,6 +738,7 @@ export function createAgentEventHandler({
     };
     broadcastChatToSession("chat", payload, sessionKey, clientRunId);
     nodeSendToSession(sessionKey, "chat", payload);
+    chatRunState.senderConnIds.delete(clientRunId);
   };
 
   const resolveToolVerboseLevel = (runId: string, sessionKey?: string) => {
