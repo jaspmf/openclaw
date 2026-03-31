@@ -1769,6 +1769,13 @@ export const chatHandlers: GatewayRequestHandlers = {
         );
       });
 
+      // Track the sender connection immediately so broadcasts always include
+      // it, even if the agent run fails before onAgentRunStart fires.
+      const senderConnId = typeof client?.connId === "string" ? client.connId : undefined;
+      if (senderConnId) {
+        context.setChatSenderConnId(clientRunId, senderConnId);
+      }
+
       let agentRunStarted = false;
       void dispatchInboundMessage({
         ctx,
@@ -1798,11 +1805,7 @@ export const chatHandlers: GatewayRequestHandlers = {
                 }
               }
             }
-            // Track the sender connection so broadcasts always include it,
-            // even for clients that never call sessions.subscribe (e.g. iOS).
-            if (connId) {
-              context.setChatSenderConnId(runId, connId);
-            }
+            // Sender connId already set before dispatchInboundMessage above.
           },
           onModelSelected,
         },
