@@ -906,6 +906,7 @@ export function createAgentEventHandler({
       clearAgentRunContext(evt.runId);
       agentRunSeq.delete(evt.runId);
       agentRunSeq.delete(clientRunId);
+      chatRunState.senderConnIds.delete(clientRunId);
     }
 
     if (
